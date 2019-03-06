@@ -2,23 +2,83 @@ const express = require('express');
 
 require('./db/mongoose');
 const { User } = require('./models/user');
+const { Todo } = require('./models/todo');
 
 const app = express();
 const port = 3000;
 
 app.use(express.json());
 
-app.post('/users', (req, res) => {
+// Routes
+app.get('/users', async (req, res) => {
+  try {
+    const users = await User.find({});
+    res.send(users);
+  } catch (e) {
+    res.status(500).send(e);
+  }
+});
+
+app.get('/users/:id', async (req, res) => {
+  const _id = req.params.id;
+  try {
+    const user = await User.findById(_id);
+
+    if (!user) {
+      return res.status(404).send();
+    }
+
+    res.send(user);
+  } catch (e) {
+    res.status(500).send(e);
+  }
+});
+
+app.post('/users', async (req, res) => {
   const user = new User(req.body);
 
-  user
-    .save()
-    .then(() => {
-      res.send(user);
-    })
-    .catch(e => {
-      res.status(400).send(e);
-    });
+  try {
+    await user.save();
+    res.status(201).send(user);
+  } catch (e) {
+    res.status(400).send(e);
+  }
+});
+
+app.get('/todos', async (req, res) => {
+  try {
+    const todos = await Todo.find({});
+    res.send(todos);
+  } catch (e) {
+    res.status(500).send(e);
+  }
+});
+
+app.get('/todos/:id', async (req, res) => {
+  const _id = req.params.id;
+
+  try {
+    const todo = await Todo.findById(_id);
+
+    if (!todo) {
+      return res.status(404).send();
+    }
+
+    res.send(todo);
+  } catch (e) {
+    res.status(500).send(e);
+  }
+});
+
+app.post('/todos', async (req, res) => {
+  const todo = new Todo(req.body);
+
+  try {
+    await todo.save();
+    res.status(201).send(todo);
+  } catch (e) {
+    res.status(400).send(e);
+  }
 });
 
 app.listen(port, () => {
