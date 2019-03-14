@@ -45,6 +45,48 @@ app.post('/users', async (req, res) => {
   }
 });
 
+app.patch('/users/:id', async (req, res) => {
+  const updates = Object.keys(req.body);
+  const allowedUpdates = ['name', 'email', 'password', 'age'];
+  const isValidOperation = updates.every(update =>
+    allowedUpdates.includes(update)
+  );
+
+  if (!isValidOperation) {
+    return res
+      .status(400)
+      .send({ error: 'Attempted to update invalid fields.' });
+  }
+
+  try {
+    const user = await User.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true
+    });
+    if (!user) {
+      return res.status(404).send();
+    }
+
+    res.send(user);
+  } catch (e) {
+    res.status(400).send(e);
+  }
+});
+
+app.delete('/users/:id', async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.params.id);
+
+    if (!user) {
+      return res.status(404).send();
+    }
+
+    res.send(user);
+  } catch (e) {
+    res.status(500).send(e);
+  }
+});
+
 app.get('/todos', async (req, res) => {
   try {
     const todos = await Todo.find({});
@@ -78,6 +120,49 @@ app.post('/todos', async (req, res) => {
     res.status(201).send(todo);
   } catch (e) {
     res.status(400).send(e);
+  }
+});
+
+app.patch('/todos/:id', async (req, res) => {
+  const updates = Object.keys(req.body);
+  const allowedUpdates = ['description', 'completed'];
+  const isValidOperation = updates.every(update =>
+    allowedUpdates.includes(update)
+  );
+
+  if (!isValidOperation) {
+    return res
+      .status(400)
+      .send({ error: 'Attempted to update invalid fields.' });
+  }
+
+  try {
+    const todo = await Todo.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true
+    });
+
+    if (!todo) {
+      return res.status(404).send();
+    }
+
+    res.send(todo);
+  } catch (e) {
+    res.status(400).send(e);
+  }
+});
+
+app.delete('/todos/:id', async (req, res) => {
+  try {
+    const todo = await Todo.findByIdAndDelete(req.params.id);
+
+    if (!todo) {
+      return res.status(404).send();
+    }
+
+    res.send(todo);
+  } catch (e) {
+    res.status(500).send(e);
   }
 });
 
