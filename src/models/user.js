@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -13,6 +14,7 @@ const userSchema = new mongoose.Schema({
     require: true,
     trim: true,
     lowercase: true,
+    unique: true,
     validate(value) {
       if (!validator.isEmail(value)) {
         throw new Error('Valid email required');
@@ -38,9 +40,41 @@ const userSchema = new mongoose.Schema({
         throw new Error('Password cannot include the word "password"');
       }
     }
-  }
+  },
+  tokens: [
+    {
+      token: {
+        type: String,
+        required: true
+      }
+    }
+  ]
 });
 
+userSchema.methods.generateAuthToken = async function() {
+  const token = jwt.sign({ _id: this._id.toString() }, 'thisismysalt');
+  this.tokens = this.tokens.concat({ token });
+  await this.save();
+  return token;
+};
+
+userSchema.statics.findByCredentials = async (email, password) => {
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    throw new Error('Unable to log in');
+  }
+
+  const isMatch = await bcrypt.compare(password, user.password);
+
+  if (!isMatch) {
+    throw new Error('Unable to log in');
+  }
+
+  return user;
+};
+
+// Hashes password
 userSchema.pre('save', async function(next) {
   if (this.isModified('password')) {
     this.password = await bcrypt.hash(this.password, 8);
