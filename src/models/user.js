@@ -51,6 +51,12 @@ const userSchema = new mongoose.Schema({
   ]
 });
 
+userSchema.virtual('todos', {
+  ref: 'Todo',
+  localField: '_id',
+  foreignField: 'author'
+});
+
 // Prevents tokens and passwords from being returned in routes
 userSchema.methods.toJSON = function() {
   const userObj = this.toObject();
@@ -94,4 +100,4 @@ userSchema.pre('save', async function(next) {
 
 const User = mongoose.model('User', userSchema);
 
-module.exports = { User };
+module.exports = User;

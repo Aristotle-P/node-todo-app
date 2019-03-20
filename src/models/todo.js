@@ -9,7 +9,12 @@ const Todo = mongoose.model('Todo', {
   completed: {
     type: Boolean,
     default: false
+  },
+  author: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    ref: 'User'
   }
 });
 
-module.exports = { Todo };
+module.exports = Todo;

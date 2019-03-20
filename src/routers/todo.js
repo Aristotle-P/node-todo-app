@@ -1,21 +1,22 @@
 const express = require('express');
-const { Todo } = require('../models/todo');
+const Todo = require('../models/todo');
+const auth = require('../middleware/auth');
 const router = new express.Router();
 
-router.get('/todos', async (req, res) => {
+router.get('/todos', auth, async (req, res) => {
   try {
-    const todos = await Todo.find({});
+    const todos = await Todo.find({ author: req.user._id });
     res.send(todos);
   } catch (e) {
     res.status(500).send(e);
   }
 });
 
-router.get('/todos/:id', async (req, res) => {
+router.get('/todos/:id', auth, async (req, res) => {
   const _id = req.params.id;
 
   try {
-    const todo = await Todo.findById(_id);
+    const todo = await Todo.findOne({ _id, author: req.user._id });
 
     if (!todo) {
       return res.status(404).send();
@@ -27,8 +28,11 @@ router.get('/todos/:id', async (req, res) => {
   }
 });
 
-router.post('/todos', async (req, res) => {
-  const todo = new Todo(req.body);
+router.post('/todos', auth, async (req, res) => {
+  const todo = new Todo({
+    ...req.body,
+    author: req.user._id
+  });
 
   try {
     await todo.save();
@@ -38,7 +42,7 @@ router.post('/todos', async (req, res) => {
   }
 });
 
-router.patch('/todos/:id', async (req, res) => {
+router.patch('/todos/:id', auth, async (req, res) => {
   const updates = Object.keys(req.body);
   const allowedUpdates = ['description', 'completed'];
   const isValidOperation = updates.every(update =>
@@ -52,13 +56,17 @@ router.patch('/todos/:id', async (req, res) => {
   }
 
   try {
-    const todo = await Todo.findById(req.params.id);
-    updates.forEach(update => (todo[update] = req.body[update]));
-    await todo.save();
+    const todo = await Todo.findOne({
+      _id: req.params.id,
+      author: req.user.id
+    });
 
     if (!todo) {
       return res.status(404).send();
     }
+
+    updates.forEach(update => (todo[update] = req.body[update]));
+    await todo.save();
 
     res.send(todo);
   } catch (e) {
@@ -66,14 +74,18 @@ router.patch('/todos/:id', async (req, res) => {
   }
 });
 
-router.delete('/todos/:id', async (req, res) => {
+router.delete('/todos/:id', auth, async (req, res) => {
   try {
-    const todo = await Todo.findByIdAndDelete(req.params.id);
+    const todo = await Todo.findOneAndDelete({
+      _id: req.params.id,
+      author: req.user._id
+    });
 
     if (!todo) {
       return res.status(404).send();
     }
 
+    // await todo.remove();
     res.send(todo);
   } catch (e) {
     res.status(500).send(e);
