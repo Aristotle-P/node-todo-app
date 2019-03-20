@@ -51,6 +51,15 @@ const userSchema = new mongoose.Schema({
   ]
 });
 
+// Prevents tokens and passwords from being returned in routes
+userSchema.methods.toJSON = function() {
+  const userObj = this.toObject();
+
+  delete userObj.tokens;
+  delete userObj.password;
+  return userObj;
+};
+
 userSchema.methods.generateAuthToken = async function() {
   const token = jwt.sign({ _id: this._id.toString() }, 'thisismysalt');
   this.tokens = this.tokens.concat({ token });
