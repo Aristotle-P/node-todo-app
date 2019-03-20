@@ -85,7 +85,6 @@ router.delete('/todos/:id', auth, async (req, res) => {
       return res.status(404).send();
     }
 
-    // await todo.remove();
     res.send(todo);
   } catch (e) {
     res.status(500).send(e);
