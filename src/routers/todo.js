@@ -4,9 +4,32 @@ const auth = require('../middleware/auth');
 const router = new express.Router();
 
 router.get('/todos', auth, async (req, res) => {
+  const match = {};
+  const sort = {};
+
+  // Sets match.completed to true if req.query.completed equals the string 'true'
+  if (req.query.completed) {
+    match.completed = req.query.completed === 'true';
+  }
+
+  if (req.query.sortBy) {
+    const parts = req.query.sortBy.split(':');
+    sort[parts[0]] = parts[1] === 'desc' ? -1 : 1;
+  }
+
   try {
-    const todos = await Todo.find({ author: req.user._id });
-    res.send(todos);
+    await req.user
+      .populate({
+        path: 'todos',
+        match,
+        options: {
+          limit: parseInt(req.query.limit),
+          skip: parseInt(req.query.skip),
+          sort
+        }
+      })
+      .execPopulate();
+    res.send(req.user.todos);
   } catch (e) {
     res.status(500).send(e);
   }
